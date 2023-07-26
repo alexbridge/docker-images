@@ -1,0 +1,56 @@
+version: '3.7'
+
+networks:
+  local:
+
+services:
+  mysql:
+    image: mysql:8.0.33
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: unless-stopped
+    volumes:
+      - ../mysql-8/mysql:/docker-entrypoint-initdb.d
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: UTC
+    ports:
+      - ${SERVICES_MYSQL_PORT:-3306}:3306
+    networks:
+      - local
+    healthcheck:
+      test: mysqladmin ping -u  $${MYSQL_USER:-root} --password=$${MYSQL_ROOT_PASSWORD:-root}
+      start_period: 5s
+      interval: 5s
+      timeout: 1s
+      retries: 30
+  
+  fusionauth:
+    image: fusionauth/fusionauth-mysql:latest
+    container_name: ${COMPOSE_PROJECT_NAME}-fusionauth
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:mysql://mysql:3306/${MYSQL_DB_NAME}
+      DATABASE_ROOT_USERNAME: ${MYSQL_USER:-root}
+      DATABASE_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      DATABASE_USERNAME: ${MYSQL_USER:-root}
+      DATABASE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      FUSIONAUTH_APP_MEMORY: ${SERVICES_FUSIONAUTH_MEMORY:-256M}
+      FUSIONAUTH_APP_RUNTIME_MODE: development
+      FUSIONAUTH_APP_SILENT_MODE: true
+      FUSIONAUTH_APP_URL: http://localhost:${SERVICES_FUSIONAUTH_PORT:-9011}
+      FUSIONAUTH_APP_KICKSTART_FILE: /usr/local/fusionauth/kickstart/kickstart-development.json
+    networks:
+      - local
+    ports:
+      - ${SERVICES_FUSIONAUTH_PORT:-9011}:9011
+    volumes:
+      - ./kickstart:/usr/local/fusionauth/kickstart
+
+volumes:
+  mysql-data:

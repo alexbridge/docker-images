@@ -1,0 +1,31 @@
+version: '3.7'
+
+networks:
+  mysql:
+
+services:
+  mysql:
+    image: mysql:8.0.33
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: unless-stopped
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: UTC
+    ports:
+      - ${SERVICES_MYSQL_PORT:-3306}:3306
+    networks:
+      - mysql
+    healthcheck:
+      test: mysqladmin ping -u  $${MYSQL_USER:-root} --password=$${MYSQL_ROOT_PASSWORD:-root}
+      start_period: 5s
+      interval: 5s
+      timeout: 1s
+      retries: 30
+
+volumes:
+  mysql-data:
