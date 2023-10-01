@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog-local
+    ports:
+      - "1025:1025"
+      - "1026:8025"
+    volumes:
+      - ./.htpasswd:/usr/mailhog/.htpasswd
+    environment:
+      - MH_AUTH_FILE=/usr/mailhog/.htpasswd
+    networks:
+      - services
+
+networks:
+  services:
+    name: external-network
+    external: true
