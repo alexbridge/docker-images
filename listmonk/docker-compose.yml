@@ -1,0 +1,57 @@
+version: "3.8"
+
+x-app-defaults: &app-defaults
+  image: listmonk/listmonk:v2.5.0
+  environment:
+    - TZ=Etc/UTC
+
+services:
+  listmonk-db:
+    image: postgres:13-alpine
+    container_name: ${COMPOSE_PROJECT_NAME}-listmonk-db
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-root}
+      - POSTGRES_USER=${POSTGRES_USER:-root}
+    restart: unless-stopped
+    healthcheck:
+      test: pg_isready -U ${POSTGRES_USER:-listmonk}
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    volumes:
+      - listmonk-data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+
+  listmonk-migrator:
+    <<: *app-defaults
+    container_name: ${COMPOSE_PROJECT_NAME}-listmonk-migrator
+    restart: on-failure
+    depends_on:
+      listmonk-db:
+        condition: service_healthy
+    volumes:
+      - ./app/config.toml:/listmonk/config.toml
+    command: sh -c "yes | ./listmonk --install"
+
+  listmonk-app:
+    <<: *app-defaults
+    container_name: ${COMPOSE_PROJECT_NAME}-listmonk-app
+    restart: unless-stopped
+    ports:
+      - 9000:9000
+    volumes:
+      - ./app/config.toml:/listmonk/config.toml
+      - ./app/static:/listmonk/static
+      - ./app/i18n:/listmonk/i18n
+    depends_on:
+      listmonk-migrator:
+        condition: service_completed_successfully
+    command: sh -c "yes | ./listmonk --static-dir=/listmonk/static --i18n-dir=/listmonk/i18n"
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "9001:1025" # SMTP
+      - "9002:8025" # UI
+volumes:
+  listmonk-data:
