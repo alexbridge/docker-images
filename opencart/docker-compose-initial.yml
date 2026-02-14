@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:8.1
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_DATABASE=opencart
+      - MYSQL_ROOT_PASSWORD=opencart
+    restart: always
+    volumes:
+      - mysql:/var/lib/mysql
+
+  opencart:
+    image: aamservices/opencart:3.0.3.8
+    restart: always
+    ports:
+      - '8080:80'
+    volumes:
+      - opencart:/var/www
+    depends_on:
+      - mysql
+volumes:
+  mysql:
+    driver: local
+  opencart:
+    driver: local
