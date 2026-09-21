@@ -6,6 +6,8 @@ CREATE DATABASE "SECOND";
 
 \connect "MAIN"
 \i /docker-entrypoint-initdb.d/include/iam.sql
+\i /docker-entrypoint-initdb.d/include/test_mixed_case.sql
 
 \connect "SECOND"
 \i /docker-entrypoint-initdb.d/include/iam.sql
+\i /docker-entrypoint-initdb.d/include/test_mixed_case.sql
