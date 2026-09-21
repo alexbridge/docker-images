@@ -1,0 +1,31 @@
+version: '3.7'
+
+services:
+  duckdb:
+    build:
+      context: .
+      args:
+        DUCKDB_VERSION: ${DUCKDB_VERSION:-1.4.1}
+    image: ${COMPOSE_PROJECT_NAME}-duckdb:${DUCKDB_VERSION:-1.4.1}
+    container_name: ${COMPOSE_PROJECT_NAME}-duckdb
+    restart: unless-stopped
+    # the UI server binds the loopback interface only, so the container shares the host
+    # network stack instead of publishing a port. Reachable on the host, not from the LAN
+    network_mode: host
+    volumes:
+      - ./duckdb:/docker-entrypoint-initdb.d:ro
+      - duckdb-data:/data
+    environment:
+      DUCKDB_DATABASE: /data/playground.duckdb
+      DUCKDB_SEED_ROWS: ${DUCKDB_SEED_ROWS:-10000000}
+      DUCKDB_UI_PORT: ${SERVICES_DUCKDB_UI_PORT:-4213}
+      TZ: UTC
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /data/.seeded"]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 60
+
+volumes:
+  duckdb-data:
