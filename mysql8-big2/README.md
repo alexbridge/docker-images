@@ -1,0 +1,1 @@
+### Playground MySql stack (domain) for learning normalization, indexes, execution plans, etc.

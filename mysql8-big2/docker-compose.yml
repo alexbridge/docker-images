@@ -1,0 +1,34 @@
+version: '3.7'
+
+networks:
+  mysql:
+
+services:
+  mysql:
+    image: mysql:${MYSQL_VERSION}
+    container_name: ${COMPOSE_PROJECT_NAME}-mysql
+    restart: unless-stopped
+    # relax durability for bulk seed load: flush redo log once/sec instead of fsync on every
+    # commit (default 1). Safe for throwaway playground data, ~1s data loss risk on crash.
+    command: --innodb-flush-log-at-trx-commit=0
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      TZ: UTC
+    ports:
+      - ${SERVICES_MYSQL_PORT:-3306}:3306
+    networks:
+      - mysql
+    healthcheck:
+      test: mysqladmin ping -u  $${MYSQL_USER:-root} --password=$${MYSQL_ROOT_PASSWORD:-root}
+      start_period: 5s
+      interval: 5s
+      timeout: 1s
+      retries: 30
+
+volumes:
+  mysql-data:
