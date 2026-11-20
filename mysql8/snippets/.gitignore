@@ -1,0 +1,3 @@
+# Real remote credentials stay local.
+cnf/*.cnf
+!cnf/local.cnf

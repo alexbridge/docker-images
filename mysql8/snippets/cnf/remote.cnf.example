@@ -1,0 +1,6 @@
+# Copy to remote.cnf (git-ignored) and fill in real values.
+[client]
+user=readonly
+password=change-me
+host=db.remote.example
+port=3306
